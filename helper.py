@@ -3,6 +3,10 @@ from wordcloud import WordCloud
 import pandas as pd
 from collections import Counter
 import emoji
+import nltk
+nltk.download('vader_lexicon')
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+
 extractor = URLExtract()
 
 
@@ -10,7 +14,10 @@ def fetch_stats(selected_user,df):
 
     if selected_user!='Overall':
         df = df[df['name'] == selected_user]
+
+    #fetch the number of messages
     num_messages = df.shape[0]
+    #fetch the number of words
     words = []
     for message in df['message']:
         words.extend(message.split())
@@ -25,7 +32,7 @@ def fetch_stats(selected_user,df):
 
 
 
-    return num_messages, len(words), num_media_messages, len(links),
+    return num_messages, len(words), num_media_messages, len(links)
 
 # fetch most busy users
 def most_busy_users(df):
@@ -42,7 +49,7 @@ def create_wordcloud(selected_user, df):
     if selected_user!='Overall':
         df = df[df['name'] == selected_user]
 
-    temp = df[df['name'] != 'group_notification']
+    temp = df[df['message'] != 'This message was deleted']
     temp = temp[temp['message'] != '<Media omitted>']
 
     def remove_stop_words(message):
@@ -53,6 +60,7 @@ def create_wordcloud(selected_user, df):
         return " ".join(y)
 
     wc = WordCloud(width=500, height=500, min_font_size=10, background_color='white')
+    temp['message'] = temp['message'].apply(remove_stop_words)
     df_wc = wc.generate(df['message'].str.cat(sep=" "))
 
     return df_wc
@@ -66,7 +74,7 @@ def most_common_words(selected_user,df):
     if selected_user != 'Overall':
         df = df[df['name'] == selected_user]
 
-    temp = df[df['name'] != 'group_notification']
+    temp = df[df['message'] != 'This message was deleted']
     temp = temp[temp['message'] != '<Media omitted>']
 
     words = []
@@ -137,4 +145,19 @@ def activity_heatmap(selected_user,df):
     user_heatmap = df.pivot_table(index='day_name', columns='period', values='message', aggfunc='count').fillna(0)
 
     return user_heatmap
+
+def sentiment_analyser(selected_user,df):
+    if selected_user != 'Overall':
+        df = df[df['name'] == selected_user]
+
+    sentiments = SentimentIntensityAnalyzer()
+    df["Positive"] = [sentiments.polarity_scores(i)["pos"] for i in df["message"]]
+    df["Negative"] = [sentiments.polarity_scores(i)["neg"] for i in df["message"]]
+    df["Neutral"] = [sentiments.polarity_scores(i)["neu"] for i in df["message"]]
+
+    x = sum(df["Positive"])
+    y = sum(df["Negative"])
+    z = sum(df["Neutral"])
+
+    return x,y,z
 

@@ -125,3 +125,22 @@ if uploaded_file is not None:
          fig, ax = plt.subplots()
          ax = sns.heatmap(user_heatmap)
          st.pyplot(fig)
+
+
+         #sentiment analysis
+         st.title("Sentiment Analysis")
+         x,y,z = helper.sentiment_analyser(selected_user,df)
+
+
+
+         if (x > y) and (x > z):
+             st.header("Positive 😊 ")
+         elif (y > x) and (y > z):
+             st.header("Negative 😠 ")
+         else:
+             st.header("Neutral 🙂 ")
+
+
+
+
+
